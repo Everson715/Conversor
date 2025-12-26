@@ -4,30 +4,47 @@ import sys
 from pathlib import Path
 
 
-def xlsx_para_json(caminho_arquivo: str):
-    arquivo = Path(caminho_arquivo)
+def ler_planilha(caminho: Path):
+    if caminho.suffix.lower() == ".xlsx":
+        df = pd.read_excel(caminho, engine="openpyxl")
 
-    if not arquivo.exists():
-        raise FileNotFoundError(f"Arquivo não encontrado: {arquivo}")
+    elif caminho.suffix.lower() == ".xls":
+        try:
+            df = pd.read_excel(caminho, engine="xlrd")
+        except Exception:
+            try:
+                tabelas = pd.read_html(caminho)
+                df = tabelas[0]
+            except Exception:
+                raise ValueError("Formato não reconhecido ou arquivo inválido.")
 
-    df = pd.read_excel(arquivo)
-    return df.to_dict(orient="records")
+    else:
+        raise ValueError("Formato não suportado.")
+
+    # 🔹 converte valores vazios para None (null no JSON)
+    df = df.where(pd.notna(df), None)
+
+    return df
 
 
 def main():
     if len(sys.argv) < 2:
-        print("Uso: python conversor.py arquivo.xlsx")
+        print("Uso: python conversor.py arquivo.xls|arquivo.xlsx")
         sys.exit(1)
 
-    caminho_xlsx = sys.argv[1]
-    dados = xlsx_para_json(caminho_xlsx)
+    caminho = Path(sys.argv[1])
 
-    arquivo_saida = Path(caminho_xlsx).with_suffix(".json")
+    if not caminho.exists():
+        raise FileNotFoundError(f"Arquivo não encontrado: {caminho}")
 
-    with open(arquivo_saida, "w", encoding="utf-8") as f:
-        json.dump(dados, f, ensure_ascii=False, indent=4)
+    df = ler_planilha(caminho)
 
-    print(f"Arquivo JSON gerado com sucesso: {arquivo_saida}")
+    saida = caminho.with_suffix(".json")
+
+    with open(saida, "w", encoding="utf-8") as f:
+        json.dump(df.to_dict(orient="records"), f, ensure_ascii=False, indent=4)
+
+    print(f"JSON gerado com sucesso: {saida}")
 
 
 if __name__ == "__main__":
