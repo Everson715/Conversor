@@ -1,4 +1,4 @@
-````md
+
 # 📊 Conversor XLS/XLSX → JSON (CLI)
 
 Uma ferramenta simples, robusta e multiplataforma para conversão de planilhas **Excel (.xls / .xlsx)** em **JSON**, desenvolvida em Python e pensada para lidar com arquivos oriundos de sistemas legados, exportações institucionais e planilhas malformadas.
